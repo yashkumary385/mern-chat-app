@@ -1,10 +1,9 @@
 // src/context/UserContext.jsx
-import { createContext, useContext, useEffect, useState } from "react";
+import {  useEffect, useState } from "react";
 import axios from "axios";
 
-const UserContext = createContext(null);
-
-export const useUser = () => useContext(UserContext);
+import UserContext from "./UserContext";
+// export const useUser = () => useContext(UserContext);
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -31,29 +30,30 @@ export const UserProvider = ({ children }) => {
     setToken(null);
   };
 
-//   useEffect(() => {
-//     const getUser = async () => {
-//       if (!token) {
-//         setUser(null);
-//         return;
-//       }
+  useEffect(() => {
+    const getUser = async () => {
+      if (!token) {
+        setUser(null);
+        return;
+      }
 
-//       try {
-//         const res = await axios.get("http://localhost:5000/api/auth/me", {
-//           headers: { Authorization: `Bearer ${token}` },
-//         });
-//         setUser(res.data);
-//       } catch (error) {
-//         console.log(error);
-//         logout();
-//       }
-//     };
+      try {
+        const res = await axios.get("http://localhost:5000/api/auth/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+        setUser(res.data);
+      } catch (error) {
+        console.log(error);
+        logout();
+      }
+    };
 
-//     getUser();
-//   }, [token]);
+    getUser();
+  }, [token]);
 
   return (
-    <UserContext.Provider value={{ user, token, login, logout }}>
+    <UserContext.Provider value={{ user, token, login, logout ,setUser}}>
       {children}
     </UserContext.Provider>
   );

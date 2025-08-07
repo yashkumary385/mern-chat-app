@@ -65,7 +65,7 @@ router.get("/me" ,verifyToken, async(req,res)=>{
     const userId = req.user.id;
     try {
         const user = await User.findById(userId).select("-password");
-    res.status(200).json({message:"Your user",user})
+    res.status(200).json(user)
     } catch (error) {
     res.status(200).json({message:"error",error:error.message})
         

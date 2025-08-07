@@ -1,6 +1,6 @@
 import React, { useState ,  } from 'react'
-import { useUser } from '../context/UserContext.jsx'
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '../hooks/useUser';
 
 export const Login = () => {
   const navigate = useNavigate();
