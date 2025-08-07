@@ -15,6 +15,9 @@ const io = new Server(server, { // // we make an server and this is ws server fo
         methods: ["GET", "POST"]
     }
 })
+import authRoutes from "./routes/auth.routes.js"
+app.use("/api/auth" , authRoutes);
+
 io.on('connection', async (socket) => {
     console.log('User connected:', socket.id);
 
@@ -25,7 +28,7 @@ io.on('connection', async (socket) => {
     socket.on('chat-message', async (msg) => { // chat meeage vent should be same from both the ends==
         console.log(msg)
         await Message.create(msg)
-        io.emit('chat-message', msg);
+        io.emit('chat-message', msg); // msg from the frontned passed on to the users 
     });
 
 
@@ -36,7 +39,7 @@ io.on('connection', async (socket) => {
 })
 
 
-app.use("/api/messages/:user1/:user2", async (req, res) => {
+app.use("/api/messages/:user1/:user2", async (req, res) => { // controller and route in one 
     try {
          const { user1, user2 } = req.params;
     const messages = await Message.find({
@@ -56,11 +59,8 @@ app.use("/api/messages/:user1/:user2", async (req, res) => {
 
 }
 
+
 )
-
-
-
-
 mongoose.connect("mongodb+srv://admin:admin123@cluster0.mypt7no.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
     .then(() => {
         console.log("Connected to mongo")
