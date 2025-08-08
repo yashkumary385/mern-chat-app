@@ -31,11 +31,11 @@ export const Login = () => {
  style={{
     background: 'linear-gradient(to right, #1f1c2c, #928dab)',
   }}    >
-      <div className="w-[350px] p-6 rounded-lg shadow-md bg-[#F9FAFB] flex flex-col items-center gap-6">
+      <div className="w-[350px] p-6 rounded-lg shadow-md bg-[#F9FAFB] flex flex-col items-center gap-6" >
         <div className="text-2xl font-bold">Login</div>
 
         {/* Icon Centered */}
-        <div className="flex justify-center items-center">
+        <div className="flex justify-center items-center" >
           <Lock className="w-6 h-6 text-gray-600" />
         </div>
 

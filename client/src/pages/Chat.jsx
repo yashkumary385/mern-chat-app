@@ -21,11 +21,19 @@ const Chat = () => {
   // socket.on("message")
   //  console.log(user)
   useEffect(()=>{
-if(user?.username){
-  socket.emit("register",user.username)
-}
-  },[user])
+    if(user?.username) return;
+
+// socket.on("connect", ()=>{
+  console.log(user)
+  socket.emit("register",user?.username)
+// })
+//  return () => {
+//     socket.off("connect");
+//   };
+  },[user]) // context didnt load if depdndecy emptty hence no user then nothing send hence crash occurs 
+
   const sendMessage = () => {
+    console.log(user)
     socket.emit("chat-message",
       {
         sender: user?.username,
@@ -52,9 +60,10 @@ if(user?.username){
   // because user might not be available so it waits for the user to be available and then  caals function
   // pu useeffct
   useEffect(() => { // a msg coming from the server and event chat-message 
-    socket.on('chat-message', (incomingMsg) => {
+      socket.on('chat-message',(incomingMsg) => {
       setMessages((prev) => [...prev, incomingMsg]);
     });
+
     socket.on("typing" , ({sender , reciever})=>{
       if(reciever === user?.username){
         setIsTyping(true)
@@ -65,22 +74,30 @@ if(user?.username){
         setIsTyping(false)
       }
     })
-    socket.on("user-online",(username)=>{
-SetIsOnlineUsers((prev) => prev.includes(username) ? prev : [...prev, username]);
-    } )
-    socket.on("user-offline",(username)=>{
-      SetIsOnlineUsers((prev)=> prev.filter((u)=> u !== username))
-    } )
-    console.log(isOnlineUsers)
+
     return () => {
       socket.off('chat-message');
       socket.off("typing")
       socket.off("Not typing")
-      socket.off("user-online")
-      socket.off("user-offline")
+     
     };
-  }, [person]);
-
+  }, [person,user]);
+ useEffect(()=>{
+    socket.on("user-online",(username)=>{
+SetIsOnlineUsers((prev) => prev.includes(username) ? prev : [...prev, username]);
+    } )
+    socket.on("online-users",(users)=>{
+      SetIsOnlineUsers(users)
+    } )
+    socket.on("user-offline",(username)=>{ // remove the user from the isonline array
+      SetIsOnlineUsers((prev)=> prev.filter((u)=> u !== username))
+    } )
+    return ()=>{
+       socket.off("user-online")
+       socket.off("online-users")
+      socket.off("user-offline")
+    }
+ },[])
   useEffect(() => {
     const fetchAllUsers = async () => {
       // console.log(user)
@@ -105,7 +122,8 @@ SetIsOnlineUsers((prev) => prev.includes(username) ? prev : [...prev, username])
 
     useEffect(()=>{
       console.log(person)
-    })
+      console.log(isOnlineUsers)
+    },[])
 
 
 const handleUser = (e)=>{
@@ -134,7 +152,6 @@ const handleTyping = (e)=>{
     socket.emit("Not typing" ,{sender:user , reciever:person} )
   }, 1000)
 }
-
   return (
 
     <div className="min-h-screen bg-gray-100 p-4">

@@ -30,25 +30,28 @@ io.on('connection', async (socket) => {
 
     //   socket.emit("chat history" , messages)
        
-    socket.on("register" , (username)=>{
+    socket.on("register",(username)=>{
         onlineUsers[username] = socket.id
+        // socket.broadcast.emit("user-online",username)
          console.log(`${username} is registered with socket ID ${socket.id}`);
-         io.emit("user-online" , username)
+        //  const alreadyOnline = Object.keys(onlineUsers).filter((u)=> (u !== username))
+        //  io.to(socket.id).emit("user-online" , alreadyOnline)
     })
-
+console.log(onlineUsers)
 // chat messsage sendde only yo rciver with his socekt id better fro efficiency  and also to the user
     socket.on('chat-message', async (msg) => { // chat mee  event should be same from both the ends==
-        console.log(msg)
-        await Message.create(msg)
-          
-        const recieverSocketId =onlineUsers[ msg.reciever]
-        if(recieverSocketId){
-        io.to(recieverSocketId).emit('chat-message', msg); // msg from the frontned passed on to the users 
-        }
-        const senderSocketId =onlineUsers[msg.sender]
-        if(senderSocketId){
-        io.to(senderSocketId).emit('chat-message', msg); // msg from the frontned passed on to the users 
-        }
+        // console.log(msg)
+        // await Message.create(msg)
+        // const recieverSocketId = onlineUsers[msg.reciever]
+        // if(recieverSocketId){
+        //     console.log(`this is the ${recieverSocketId}`)
+        // io.to(recieverSocketId).emit('chat-message', msg); // msg from the frontned passed on to the users 
+        // }
+        // const senderSocketId =onlineUsers[msg.sender]
+        // if(senderSocketId){
+        // io.to(senderSocketId).emit('chat-message', msg); // msg from the frontned passed on to the users 
+        // }
+        io.emit("chat-message",msg)
     });
 
     
