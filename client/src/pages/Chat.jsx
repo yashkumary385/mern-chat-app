@@ -16,16 +16,17 @@ const Chat = () => {
   const [messages, setMessages] = useState([]);
   const [person, setPerson] = useState(()=> localStorage.getItem("person") || null)
   const[isOnlineUsers , SetIsOnlineUsers] = useState([])
-  const[isOnline , SetIsOnline] = useState(false)
-
+  const[lastSeenMap , setLastSeenMap] = useState({})
+  const [wantStatus , setWantStatus] = useState(true);
   // socket.on("message")
-  //  console.log(user)
   useEffect(()=>{
-    if(user?.username) return;
-
+  //  console.log(user)
+// 
+    if(!user?.username) return;
+      
 // socket.on("connect", ()=>{
   console.log(user)
-  socket.emit("register",user?.username)
+  socket.emit("register",user?.username,user?.status) // emits an event register whne the user gets loaded in to the memory 
 // })
 //  return () => {
 //     socket.off("connect");
@@ -64,8 +65,8 @@ const Chat = () => {
       setMessages((prev) => [...prev, incomingMsg]);
     });
 
-    socket.on("typing" , ({sender , reciever})=>{
-      if(reciever === user?.username){
+    socket.on("typing" , ({sender , reciever})=>{ // we fisrt send the emit through socket emit and then get with on in baceknd an then cacth with on in frontned 
+      if(reciever === user?.username){ 
         setIsTyping(true)
       }
     })
@@ -74,30 +75,56 @@ const Chat = () => {
         setIsTyping(false)
       }
     })
-
-    return () => {
+    return () =>{
       socket.off('chat-message');
       socket.off("typing")
       socket.off("Not typing")
      
     };
-  }, [person,user]);
+  }, [person]);
  useEffect(()=>{
-    socket.on("user-online",(username)=>{
-SetIsOnlineUsers((prev) => prev.includes(username) ? prev : [...prev, username]);
-    } )
+
+  
+  
     socket.on("online-users",(users)=>{
       SetIsOnlineUsers(users)
     } )
     socket.on("user-offline",(username)=>{ // remove the user from the isonline array
       SetIsOnlineUsers((prev)=> prev.filter((u)=> u !== username))
     } )
+   
     return ()=>{
        socket.off("user-online")
        socket.off("online-users")
       socket.off("user-offline")
+       socket.off("last-seen");
     }
  },[])
+
+
+useEffect(()=>{
+if( !wantStatus ) return;
+  socket.on("user-online",(username)=>{
+SetIsOnlineUsers((prev) => prev.includes(username) ? prev : [...prev, username]);
+    } )
+},[wantStatus])
+
+
+ useEffect(()=>{
+ socket.on("last-seen", ({username , time})=>{
+      setLastSeenMap((prev)=> ({...prev,[username]:time}))
+      console.log(lastSeenMap); // username is the key we do set it like the array still it disappaers on refresh
+    } )
+    socket.on("last-seen-online", (lastSeen)=>{
+      setLastSeenMap(lastSeen) //last seen is an objct coming from backend
+    })
+     return ()=>{
+       socket.off("last-seen");
+       socket.off("last-seen-online");
+    }
+ },[])
+
+
   useEffect(() => {
     const fetchAllUsers = async () => {
       // console.log(user)
@@ -123,6 +150,7 @@ SetIsOnlineUsers((prev) => prev.includes(username) ? prev : [...prev, username])
     useEffect(()=>{
       console.log(person)
       console.log(isOnlineUsers)
+      console.log(lastSeenMap)
     },[])
 
 
@@ -141,23 +169,34 @@ setPerson(null)
 
 const handleLogout = ()=>{
 localStorage.removeItem("person")
+setPerson(null)
 logout()
 
 }
 const handleTyping = (e)=>{
   setMsg(e.target.value);
-  socket.emit("typing" , {sender:user , reciever:person} )
+  socket.emit("typing" , {sender:user?.username,reciever:person} )
+  console.log({sender:user?.username,reciever:person})
   clearTimeout(typingTimeoutRef.current)
   typingTimeoutRef.current = setTimeout(()=>{
-    socket.emit("Not typing" ,{sender:user , reciever:person} )
+    socket.emit("Not typing" ,{sender:user?.username , reciever:person} )
   }, 1000)
 }
+const handleStatus = () => {
+  console.log("button clicked");
+  setWantStatus(prev => !prev);
+  console.log(wantStatus)
+};
+
+
+
   return (
 
     <div className="min-h-screen bg-gray-100 p-4">
       {user?.username}
       <h1 className="text-2xl font-bold mb-4">Simple Chat</h1>
       <div>Users
+  <button onClick={handleStatus}>hiii</button>
 
         <select onChange={(e)=> handleUser(e)} value={person || ""} >
             <option value="" disabled>Select a user to chat with</option>
@@ -165,8 +204,16 @@ const handleTyping = (e)=>{
             users
             .filter((u)=> u?.username !== user?.username)
             .map((u) => {
+              const lastSeenTime = lastSeenMap[u.username]
+              ? new Date(lastSeenMap[u.username]).toLocaleTimeString()
+                :
+                null ;
+              
 return <option key={u._id} value={u.username}>
-  {u.username}{isOnlineUsers.includes(u.username) && '🟢'}
+  {u.username}{isOnlineUsers.includes(u.username) ?  '🟢' : 
+  lastSeenTime ? `last Seen : ${lastSeenTime}` : ""
+  }
+
 </option>
             })
           }
@@ -183,7 +230,7 @@ return <option key={u._id} value={u.username}>
             </div>
             
           ))}
-        {isTyping && <div>{person} is typing</div>}
+        {isTyping && <div>{person}  is typing</div>}
 
         </div>
 
