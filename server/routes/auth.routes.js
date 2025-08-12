@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken"
 import bcrypt, { getRounds } from "bcrypt";
 import dotenv from "dotenv"
 import { verifyToken } from "../middleware/authMiddleware.js";
+import Message from "../models/Message.js";
 
 dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET
@@ -67,24 +68,70 @@ router.get("/me" ,verifyToken, async(req,res)=>{
         const user = await User.findById(userId).select("-password");
     res.status(200).json(user)
     } catch (error) {
-    res.status(200).json({message:"error",error:error.message})
+    res.status(404).json({message:"error",error:error.message})
         
     }
 })
 
-
+router.get("/search/:username", verifyToken , async(req,res)=>{
+    const userId = req.user.id;
+    const {username} = req.params;
+    try {
+        const user = await User.find({username : username})
+         res.status(200).json({message:"Your user" , user})
+    } catch (error) {
+    res.status(404).json({message:"error",error:error.message})
+        
+    }
+})
 
 router.get("/allUsers" ,verifyToken, async(req,res)=>{
-    // const userId = req.user.id;
+    const userId = req.user.id;
     try {
-        const user = await User.find({}).select("-password");
-    res.status(200).json({message:"Your users",user})
+        const user = await User.findById(userId).select("-password");
+    const messages = await Message.find({
+      $or: [{ sender: user.username }, { reciever: user.username }]
+    });
+
+    const chatUsersSet = new Set();
+    messages.forEach((msg)=>{
+        if(msg.sender !== user.username) chatUsersSet.add(msg.sender)
+        if(msg.reciever !== user.username) chatUsersSet.add(msg.sender)
+    })
+      const chatUsers = Array.from(chatUsersSet);
+    res.status(200).json({message:"Your users",chatUsers})
     } catch (error) {
-    res.status(200).json({message:"error",error:error.message})
+    res.status(404).json({message:"error",error:error.message})
         
     }
 })
 
-
-
+router.put("/update",verifyToken , async(req,res)=>{
+    const userId = req.user.id;
+    try {
+         const updateFields = {
+        username:req.body.username,
+        email:req.body.email
+    }
+    const updatedUser = await User.findByIdAndUpdate(userId,
+        updateFields,
+        {new:true}
+    )
+    res.status(200).json({message:"Your updated User",updatedUser})
+    } catch (error) {
+    res.status(404).json({message:"error",error:error.message})
+}})
+ router.delete("/delete",verifyToken,async(req,res)=>{
+    try {
+        const userId = req.user.id;
+    const user = await User.findByIdAndDelete(userId)
+     await Message.deleteMany( {
+        $or:[{sender:user.username} , {reciever:user.username}]
+    })
+    res.status(200).json({message:"Your Deleted User",user})
+    } catch (error) {
+    res.status(404).json({message:"error",error:error.message})
+    }
+    
+ })
 export default router

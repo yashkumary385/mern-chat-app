@@ -6,8 +6,8 @@ const userSchema = new mongoose.Schema({
   email:{type:String , required : true},
   status:{
     "type":String,
-    "enum":["online","offline","invisible"],
-    "default":"offline"
+    "enum":["online","invisible"],
+    "default":"invisible"
   }
 });
 

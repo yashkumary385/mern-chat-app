@@ -4,6 +4,8 @@ import { Server } from "socket.io";
 import cors from "cors"
 import mongoose from "mongoose";
 import Message from "./models/Message.js";
+import { verifyToken } from "./middleware/authMiddleware.js";
+import User from "./models/User.js";
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -31,16 +33,21 @@ io.on('connection', async (socket) => {
 
     //   socket.emit("chat history" , messages)
 
-    socket.on("register", (username, status) => { // this is to listen the regitser event added the users to the online users list with the key and value pair 
-      if (status === "invisible") {
+
+    socket.on("register", (username, status) => {// this is to listen the regitser event added the users to the online users list with the key and value pair 
+       delete onlineUsers[username];
+        if (status !== "invisible") {
         // Don't include them in the public onlineUsers list
-        delete onlineUsers[username];
-    } else {
         onlineUsers[username] = socket.id;
+          delete lastSeen[username]
+    
+    } else {
+            delete onlineUsers[username];
+
     }
         // onlineUsers[username] = socket.id
-        delete lastSeen[username] // delete when the user is online 
-        io.emit("user-online", username)
+       // delete when the user is online 
+        // io.emit("user-online", username)
         io.emit("last-seen-online", lastSeen)
 
         console.log(`${username} is registered with socket ID and added to the online users with  ${socket.id}`);
@@ -90,7 +97,7 @@ io.on('connection', async (socket) => {
                 lastSeen[username] = new Date().toISOString(); //addedd last seen whne user disconnected
                 io.emit("user-offline", username);
                 io.emit("online-users", Object.keys(onlineUsers)) // new onlineUsers list 
-                io.emit("last-seen", { username, time: lastSeen[username] })
+                // io.emit("last-seen", { username, time: lastSeen[username] })
                 console.log("this is the last seen", lastSeen)
 
                 console.log(`${username} removed from online users.`);
@@ -120,10 +127,45 @@ app.use("/api/messages/:user1/:user2", async (req, res) => { // controller and r
 
 
 
+
 }
 
 
+
+
 )
+
+app.use("/api/status", verifyToken,async(req,res)=>{
+    const userId = req.user.id;
+    const {status} = req.body;
+try {
+    const updated = await User.findByIdAndUpdate(userId , {
+        status:status
+        
+    },{new:true})
+    res.status(200).json(updated)
+} catch (error) {
+    res.status(404).json({message: error})
+}
+
+})
+
+app.use("/api/read", verifyToken,async(req,res)=>{
+    const userId = req.user.id;
+   
+try {
+    const updated = await User.findByIdAndUpdate(userId , {
+        read:true
+    },{new:true})
+    res.status(200).json(updated)
+} catch (error) {
+    res.status(404).json({message: error})
+}
+})
+
+
+
+
 mongoose.connect("mongodb+srv://admin:admin123@cluster0.mypt7no.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
     .then(() => {
         console.log("Connected to mongo")
