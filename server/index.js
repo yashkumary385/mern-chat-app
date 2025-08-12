@@ -40,6 +40,7 @@ io.on('connection', async (socket) => {
         // Don't include them in the public onlineUsers list
         onlineUsers[username] = socket.id;
           delete lastSeen[username]
+        io.emit("last-seen-online", lastSeen)
     
     } else {
             delete onlineUsers[username];
@@ -48,7 +49,6 @@ io.on('connection', async (socket) => {
         // onlineUsers[username] = socket.id
        // delete when the user is online 
         // io.emit("user-online", username)
-        io.emit("last-seen-online", lastSeen)
 
         console.log(`${username} is registered with socket ID and added to the online users with  ${socket.id}`);
         //  const alreadyOnline = Object.keys(onlineUsers).filter((u)=> (u !== username))
@@ -70,10 +70,8 @@ io.on('connection', async (socket) => {
         if (senderSocketId) {
             io.to(senderSocketId).emit('chat-message', msg); // msg from the frontned passed on to the users 
         }
-        // io.emit("chat-message",msg) to emit the message to all the users .
+        io.emit("chat-message",msg) 
     });
-
-
     socket.on("typing", ({ sender, reciever }) => { // only to the reciever  
         const recieverSocketId = onlineUsers[reciever]
         if (recieverSocketId) {
@@ -86,7 +84,7 @@ io.on('connection', async (socket) => {
             io.to(recieverSocketId).emit("Not typing", { sender, reciever });
         }
     })
-                console.log("this is the last seen", lastSeen)
+    console.log("this is the last seen", lastSeen)
 
     socket.on('disconnect', () => { // when user closes the tab
         console.log('User disconnected:', socket.id);
@@ -163,7 +161,19 @@ try {
 }
 })
 
-
+app.use("/api/deleteChat/:user1/:user2", verifyToken,async(req,res)=>{
+    const {user1 ,user2 } = req.params;
+    try {
+        const messages = await Message.deleteMany({
+        $or:[{sender:user1 , reciever:user2} , {sender:user2 , reciever:user1}]
+    })
+    res.status(200).json({message:"Deleted Succesfully"})
+    } catch (error) {
+    res.status(404).json({message: error})
+        
+    }
+    
+})
 
 
 mongoose.connect("mongodb+srv://admin:admin123@cluster0.mypt7no.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")

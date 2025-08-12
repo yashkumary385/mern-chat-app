@@ -28,6 +28,7 @@ export const UserProvider = ({ children }) => {
     localStorage.removeItem("token");
     setUser(null);
     setToken(null);
+    
   };
 
   useEffect(() => {

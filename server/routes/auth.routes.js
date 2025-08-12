@@ -72,20 +72,22 @@ router.get("/me" ,verifyToken, async(req,res)=>{
         
     }
 })
+router.get("/search/:username", verifyToken, async (req, res) => {
+  const userId = req.user.id;
+  const { username } = req.params;
 
-router.get("/search/:username", verifyToken , async(req,res)=>{
-    const userId = req.user.id;
-    const {username} = req.params;
-    try {
-        const user = await User.find({username : username})
-         res.status(200).json({message:"Your user" , user})
-    } catch (error) {
-    res.status(404).json({message:"error",error:error.message})
-        
-    }
-})
+  try {
+    const user = await User.find({
+  username: { $regex: username, $options: "i" }
+});
 
-router.get("/allUsers" ,verifyToken, async(req,res)=>{
+    res.status(200).json({ message: "Your user", user });
+  } catch (error) {
+    res.status(404).json({ message: "error", error: error.message });
+  }
+});
+
+router.get("/allChatUsers" ,verifyToken, async(req,res)=>{
     const userId = req.user.id;
     try {
         const user = await User.findById(userId).select("-password");
@@ -96,10 +98,21 @@ router.get("/allUsers" ,verifyToken, async(req,res)=>{
     const chatUsersSet = new Set();
     messages.forEach((msg)=>{
         if(msg.sender !== user.username) chatUsersSet.add(msg.sender)
-        if(msg.reciever !== user.username) chatUsersSet.add(msg.sender)
+        if(msg.reciever !== user.username) chatUsersSet.add(msg.reciever)
     })
       const chatUsers = Array.from(chatUsersSet);
     res.status(200).json({message:"Your users",chatUsers})
+    } catch (error) {
+    res.status(404).json({message:"error",error:error.message})
+        
+    }
+})
+router.get("/allUsers" ,verifyToken, async(req,res)=>{
+    const userId = req.user.id;
+    try {
+        const user = await User.find({}).select("-password");
+      
+    res.status(200).json({message:"Your users",user})
     } catch (error) {
     res.status(404).json({message:"error",error:error.message})
         
@@ -124,10 +137,11 @@ router.put("/update",verifyToken , async(req,res)=>{
  router.delete("/delete",verifyToken,async(req,res)=>{
     try {
         const userId = req.user.id;
-    const user = await User.findByIdAndDelete(userId)
+    const user = await User.findById(userId)
      await Message.deleteMany( {
         $or:[{sender:user.username} , {reciever:user.username}]
     })
+        await User.findByIdAndDelete(userId);
     res.status(200).json({message:"Your Deleted User",user})
     } catch (error) {
     res.status(404).json({message:"error",error:error.message})

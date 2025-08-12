@@ -2,6 +2,7 @@ import React, { useState ,  } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { Lock ,Mail } from "lucide-react";
 import { useUser } from '../hooks/useUser';
+import Button from 'react-bootstrap/Button';
 
 
 export const Login = () => {
@@ -25,12 +26,10 @@ export const Login = () => {
   }
  return (
     <div
-      className="flex justify-center items-center min-h-[100vh]  
+      className="flex justify-center items-center min-h-[100vh] bg-black  
 
 "
- style={{
-    background: 'linear-gradient(to right, #1f1c2c, #928dab)',
-  }}    >
+    >
       <div className="w-[350px] p-6 rounded-lg shadow-md bg-[#F9FAFB] flex flex-col items-center gap-6" >
         <div className="text-2xl font-bold">Login</div>
 
@@ -49,7 +48,7 @@ export const Login = () => {
             <Mail className="absolute top-2 left-2 w-6 h-6 text-gray-600" />
             <input
               type="email"
-              className="border-2 border-[#4CAF50] pl-12 pr-10 py-2 w-full rounded hover:bg-gray-100"
+              className="border-2 border-blue-200  pl-12 pr-10 py-2 w-full rounded hover:bg-gray-100"
               value={email}
               placeholder="Email"
               onChange={(e) => setEmail(e.target.value)}
@@ -62,7 +61,7 @@ export const Login = () => {
             <Lock className="absolute top-2 left-2 w-6 h-6 text-gray-600" />
             <input
               type="password"
-              className="border-2 border-[#4CAF50] pl-12 pr-10 py-2 w-full rounded hover:bg-gray-100"
+              className="border-2 border-blue-200 pl-12 pr-10 py-2 w-full rounded hover:bg-gray-100"
               value={password}
               placeholder="Enter password"
               onChange={(e) => setPassword(e.target.value)}
@@ -71,12 +70,13 @@ export const Login = () => {
           </div>
 
           {/* Button styled as "outline-success" */}
-          <button
+          <Button
+          variant='primary'
             type="submit"
             className="w-full py-2 border-2 border-green-600 text-green-600 rounded hover:bg-green-50 transition duration-150"
           >
             Login
-          </button>
+          </Button>
         </form>
       </div>
     </div>

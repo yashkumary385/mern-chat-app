@@ -8,8 +8,7 @@ import Signup from "./pages/signup";
 export const router = createBrowserRouter(
   createRoutesFromElements(
     <>
-
-    <Route path="/login" element={<Login/>}/>
+    <Route path="/" element={<Login/>}/>
     <Route path="/signup" element={<Signup/>}/>
     <Route path="/chat" element={<Chat/>}/>
     </>

@@ -2,6 +2,7 @@ import React, { useState ,  } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { Lock ,Mail } from "lucide-react";
 import axios from "axios"
+import Button from 'react-bootstrap/Button';
 
 
 export const Signup = () => {
@@ -25,19 +26,17 @@ export const Signup = () => {
         email:form.email
       })
       console.log(res)
-      navigate("/login")
+      navigate("/")
     } catch (error) {
       console.log(error)
     }
    }
  return (
     <div
-      className="flex justify-center items-center min-h-[100vh]  
+      className="flex justify-center items-center min-h-[100vh]  bg-black
 
 "
- style={{
-    background: 'linear-gradient(to right, #1f1c2c, #928dab)',
-  }}    >
+     >
       <div className="w-[350px] p-6 rounded-lg shadow-md bg-[#F9FAFB] flex flex-col items-center gap-6">
         <div className="text-2xl font-bold">Signup</div>
 
@@ -57,7 +56,7 @@ export const Signup = () => {
             <input
               type="text"
               name="username"
-              className="border-2 border-[#4CAF50] pl-12 pr-10 py-2 w-full rounded hover:bg-gray-100"
+              className="border-2 border-blue-200 pl-12 pr-10 py-2 w-full rounded hover:bg-gray-100"
               value={form.username}
               placeholder="Username"
               onChange={(e)=>handleChange(e)}
@@ -69,7 +68,7 @@ export const Signup = () => {
             <input
               type="email"
               name="email"
-              className="border-2 border-[#4CAF50] pl-12 pr-10 py-2 w-full rounded hover:bg-gray-100"
+              className="border-2 border-blue-200  pl-12 pr-10 py-2 w-full rounded hover:bg-gray-100"
               value={form.email}
               placeholder="Email"
               onChange={(e)=>handleChange(e)}
@@ -83,7 +82,7 @@ export const Signup = () => {
             <input
             name="password"
               type="password"
-              className="border-2 border-[#4CAF50] pl-12 pr-10 py-2 w-full rounded hover:bg-gray-100"
+              className="border-2 border-blue-200 pl-12 pr-10 py-2 w-full rounded hover:bg-gray-100"
               value={form.password}
               placeholder="Enter password"
               onChange={(e)=>handleChange(e)}
@@ -92,12 +91,13 @@ export const Signup = () => {
           </div>
 
           {/* Button styled as "outline-success" */}
-          <button
+          <Button
+          variant='primary'
             type="submit"
-            className="w-full py-2 border-2 border-green-600 text-green-600 rounded hover:bg-green-50 transition duration-150"
+            className="w-full py-2 border-2 border-blue-200 text-blue-400 rounded hover:bg-green-50 transition duration-150"
           >
             Signup
-          </button>
+          </Button>
         </form>
       </div>
     </div>

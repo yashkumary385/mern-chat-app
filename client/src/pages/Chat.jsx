@@ -11,6 +11,7 @@ import Modal from 'react-bootstrap/Modal';
 import { useRef } from 'react';
 import { use } from 'react';
 import ChatNavbar from '../components/Navbar';
+import { useNavigate } from 'react-router-dom';
 const socket = io("http://localhost:5000") // this tells us about our backend from where the request comes
 
 const Chat = () => {
@@ -28,9 +29,10 @@ const Chat = () => {
   const [username, setusername] = useState("")
   const [search, setSearch] = useState(false)
   const [searchedUser, setSearchedUser] = useState([])
+  const navigate = useNavigate()
 const[form , setForm] = useState({
-  email:"",
-  username:""
+  email:user?.email,
+  username:user?.username
 })
   useEffect(() => {
     if (!user?.username) return;
@@ -39,15 +41,18 @@ const[form , setForm] = useState({
   }, [user]) // context didnt load if depdndecy emptty hence no user then nothing send hence crash occurs 
 
   const sendMessage = () => {
-    console.log(user)
-    socket.emit("chat-message",
-      {
-        sender: user?.username,
-        text: msg,
-        reciever: person
-      })
-    setMsg("")  // we take from the frontend user or client 
-  }
+  const newMsg = {
+    sender: user?.username,
+    text: msg,
+    reciever: person
+  };
+
+  socket.emit("chat-message", newMsg);
+
+  setMessages((prev) => [...prev, newMsg]); 
+  setMsg("");
+};
+
   const fetchMessages = async () => {
     try {
       const res = await axios(`http://localhost:5000/api/messages/${user?.username}/${person}`);
@@ -114,6 +119,8 @@ const handleDelete = async()=>{
       headers : {Authorization :`Bearer ${token}`}
     })
     console.log(res)
+    setPerson("")
+    
   } catch (error) {
     console.log(error)
   }
@@ -130,12 +137,10 @@ const handleDelete = async()=>{
     }
   }, [])
 
-
-  useEffect(() => {
-    const fetchAllUsers = async () => {
+ const fetchAllUsers = async () => {
       // console.log(user)
       try {
-        const res = await axios.get("http://localhost:5000/api/auth/allUsers", {
+        const res = await axios.get("http://localhost:5000/api/auth/allChatUsers", {
           headers: { Authorization: `Bearer ${token}` },
         }
         )
@@ -147,6 +152,8 @@ console.log(users)
         console.log(error)
       }
     }
+  useEffect(() => {
+   
     fetchAllUsers()
   }
     , [token , user])
@@ -183,6 +190,7 @@ console.log(users)
   const handleLogout = () => {
     localStorage.removeItem("person")
     setPerson(null)
+    navigate("/")
     logout()
 
   }
@@ -221,8 +229,10 @@ const handleSearch = async()=>{
       }
     )
     console.log(res)
-    setSearch(true)
     setSearchedUser(res.data.user)
+
+    setSearch(true)
+    
     console.log(searchedUser)
   } catch (error) {
     console.log(error)
@@ -252,10 +262,40 @@ const handleSubmit=async (e)=>{
 const openEditModal = () => {
   setShowModal(true);
 };
+const handlePerson =(e)=>{
+const newPerson = e.target.value
+setPerson(e.target.value)
+    localStorage.setItem("person", newPerson)
+fetchMessages();
+  // fetchAllUsers()
+}
+
+
+const handleChat = async () => {
+  const confirmDelete = window.confirm("Are you sure you want to delete this chat?");
+  if (!confirmDelete) return;
+
+  try {
+    await axios.delete(
+      `http://localhost:5000/api/deleteChat/${user.username}/${person}`,
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+
+    setMessages([]); // Clear UI
+    alert("Chat deleted successfully");
+  } catch (error) {
+    console.log(error);
+    alert("Failed to delete chat");
+  }
+};
+
+
 
   return (
     <>
-      <ChatNavbar onEditClick={openEditModal} onDeleteClick={handleDelete}/>
+      <ChatNavbar onEditClick={openEditModal} onDeleteClick={handleDelete} onLogout={handleLogout}/>
       <div className="min-h-screen bg-gray-100 p-4 flex h-screen">
         {/* Sidebar */}
          <div className='flex flex-col gap-3'>
@@ -263,23 +303,30 @@ const openEditModal = () => {
   <input type="text" 
    onChange={(e)=> setusername(e.target.value)}
    placeholder='Search Username '
-   className='border-3 p-2 rounded-2xl'
+   className='border-1 hover:bg-blue-100 p-2 mr-2 rounded-2xl'
    />
    <Button onClick={handleSearch} variant="primary">Search</Button>
-   { search && searchedUser.map((user)=>(
-    <button  key={user._id}>
-      {user?.username} || No users Found
-    </button>
-   ))}
+
+  {search && searchedUser.length==0 ? <div>No users with this username</div> :   (searchedUser.map((user) => (
+  
+  <div
+    key={user._id}
+    onClick={() => handlePerson({ target: { value: user.username } })}
+    className="cursor-pointer border px-3 py-2 rounded-lg hover:bg-blue-100 dark:hover:bg-gray-700"
+  >
+    {user.username}
+  </div>
+)))}
+
    {/* Come back here tomorrow and finish this  */}
 </div>
         <div className="bg-white border-r w-[20vw] overflow-y-auto">
           <ListGroup variant="flush" className="h-full">
             {users
-              .filter((u) => u?.username !== user?.username)
+              .filter((u) => u !== user?.username)
               .map((u) => {
-                const lastSeenTime = lastSeenMap[u.username]
-                  ? new Date(lastSeenMap[u.username]).toLocaleTimeString()
+                const lastSeenTime = lastSeenMap[u]
+                  ? new Date(lastSeenMap[u]).toLocaleTimeString()
                   : null;
 
                 return (
@@ -289,7 +336,7 @@ const openEditModal = () => {
                     active={person === u}
                     onClick={() => handleUser({ target: { value: u } })}
                     className={`flex justify-between items-center cursor-pointer border-b px-3 py-2 
-                hover:bg-gray-100 ${person === u.username
+                hover:bg-gray-100 ${ person === u.username
                         ? "bg-blue-100 border-l-4 border-blue-500"
                         : ""
                       }`}
@@ -298,7 +345,7 @@ const openEditModal = () => {
                     {isOnlineUsers.includes(u) ? (
                       <span className="text-green-500 text-sm">●</span>
                     ) : lastSeenTime ? (
-                      <small className="text-gray-500">{lastSeenTime}</small>
+                      <small className="text-gray-500">  Last seen at  {lastSeenTime} </small>
                     ) : null}
                   </ListGroup.Item>
                 );
@@ -315,6 +362,10 @@ const openEditModal = () => {
             <>
               <h2 className="text-xl font-semibold mb-2">Chat with {person}</h2>
               <div className="flex-1 overflow-y-auto border p-2 mb-2">
+                <div className='flex items-center justify-center opacity-50 mt-3'>
+                {messages.length === 0 && <div>No messages yet. Start the conversation! 💬</div>
+                }
+                </div>
                 {messages.map((m, i) => {
                   const isSender = m.sender === user?.username;
 
@@ -358,8 +409,11 @@ const openEditModal = () => {
                 </button>
               </div>
 
-              <button className="mt-2 text-red-600" onClick={handleExit}>
+              <button className="mt-2 text-blue-600" onClick={handleExit}>
                 Exit chat
+              </button>
+              <button className="mt-2 text-red-600" onClick={handleChat}>
+                Delete chat
               </button>
             </>
           ) : (
