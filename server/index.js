@@ -11,6 +11,7 @@ app.use(cors());
 app.use(express.json());
 const onlineUsers = {} // this gets completely reset on refresh frontend repopulates and runs regiter to fill the array 
 const lastSeen = {}
+const allUsers ={} // for all users that register no matter they are shown offline or online . beacuse of their mode .
 // {
 //   "alice": "4dx03K9fB8s1PvAeAAAC",
 //   "bob":   "0qv8oWrRV5bVUg9nAAAB",
@@ -49,11 +50,12 @@ io.on('connection', async (socket) => {
         // onlineUsers[username] = socket.id
        // delete when the user is online 
         // io.emit("user-online", username)
-
+             allUsers[username] = socket.id;
         console.log(`${username} is registered with socket ID and added to the online users with  ${socket.id}`);
         //  const alreadyOnline = Object.keys(onlineUsers).filter((u)=> (u !== username))
         io.emit("online-users", Object.keys(onlineUsers))
         console.log(onlineUsers)
+        console.log(allUsers)
     })
 
 
@@ -61,25 +63,25 @@ io.on('connection', async (socket) => {
     socket.on('chat-message', async (msg) => { // chat mee  event should be same from both the ends==
         console.log(msg)
         await Message.create(msg)
-        const recieverSocketId = onlineUsers[msg.reciever]
+        const recieverSocketId = allUsers[msg.reciever]
         if (recieverSocketId) {
             console.log(`this is the ${recieverSocketId}`)
             io.to(recieverSocketId).emit('chat-message', msg); // msg from the frontned passed on to the users 
         }
-        const senderSocketId = onlineUsers[msg.sender]
+        const senderSocketId = allUsers[msg.sender]
         if (senderSocketId) {
             io.to(senderSocketId).emit('chat-message', msg); // msg from the frontned passed on to the users 
         }
-        io.emit("chat-message",msg) 
+        // io.emit("chat-message",msg) 
     });
     socket.on("typing", ({ sender, reciever }) => { // only to the reciever  
-        const recieverSocketId = onlineUsers[reciever]
+        const recieverSocketId = allUsers[reciever]
         if (recieverSocketId) {
             io.to(recieverSocketId).emit("typing", { sender, reciever });
         }
     })
     socket.on("Not typing", ({ sender, reciever }) => {
-        const recieverSocketId = onlineUsers[reciever]
+        const recieverSocketId = allUsers[reciever]
         if (recieverSocketId) {
             io.to(recieverSocketId).emit("Not typing", { sender, reciever });
         }
@@ -147,15 +149,17 @@ try {
 }
 
 })
-
-app.use("/api/read", verifyToken,async(req,res)=>{
-    const userId = req.user.id;
+app.use("/api/read/:sender/:reciever", verifyToken,async(req,res)=>{
+    const {sender , reciever} = req.params
    
 try {
-    const updated = await User.findByIdAndUpdate(userId , {
-        read:true
-    },{new:true})
-    res.status(200).json(updated)
+    const messages = await Message.find({ sender , reciever, read:false }).sort({ timestamp: 1 });
+   messages.forEach((msg)=> msg.read = true)
+   for(const msg of messages){
+    msg.read= true;
+    msg.save();
+   }
+      res.status(200).json({ message: "Messages marked as read", updatedCount: messages.length });
 } catch (error) {
     res.status(404).json({message: error})
 }

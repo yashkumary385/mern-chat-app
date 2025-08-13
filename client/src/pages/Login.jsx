@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Lock ,Mail } from "lucide-react";
 import { useUser } from '../hooks/useUser';
 import Button from 'react-bootstrap/Button';
-
+import { Link } from 'react-router-dom';
 
 export const Login = () => {
   const navigate = useNavigate();
@@ -18,10 +18,8 @@ export const Login = () => {
       if(result.success){
         navigate("/chat")
       }
-
-
     } catch (error) {
-        console.log("error")
+        console.log(error)
     }
   }
  return (
@@ -78,6 +76,7 @@ export const Login = () => {
             Login
           </Button>
         </form>
+      <Link to="/signup">SignUp</Link>
       </div>
     </div>
   );

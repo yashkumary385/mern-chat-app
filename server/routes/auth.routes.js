@@ -124,7 +124,8 @@ router.put("/update",verifyToken , async(req,res)=>{
     try {
          const updateFields = {
         username:req.body.username,
-        email:req.body.email
+        email:req.body.email,
+        status:req.body.status
     }
     const updatedUser = await User.findByIdAndUpdate(userId,
         updateFields,
@@ -132,7 +133,7 @@ router.put("/update",verifyToken , async(req,res)=>{
     )
     res.status(200).json({message:"Your updated User",updatedUser})
     } catch (error) {
-    res.status(404).json({message:"error",error:error.message})
+    res.status(404).json({message:error,error:error.message})
 }})
  router.delete("/delete",verifyToken,async(req,res)=>{
     try {
@@ -144,7 +145,7 @@ router.put("/update",verifyToken , async(req,res)=>{
         await User.findByIdAndDelete(userId);
     res.status(200).json({message:"Your Deleted User",user})
     } catch (error) {
-    res.status(404).json({message:"error",error:error.message})
+    res.status(404).json({message:error,error:error.message})
     }
     
  })

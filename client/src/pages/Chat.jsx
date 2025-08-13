@@ -6,7 +6,7 @@ import { useUser } from '../hooks/useUser';
 import ListGroup from 'react-bootstrap/ListGroup';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
-
+import { toast } from 'react-toastify';
 
 import { useRef } from 'react';
 import { use } from 'react';
@@ -32,7 +32,8 @@ const Chat = () => {
   const navigate = useNavigate()
 const[form , setForm] = useState({
   email:user?.email,
-  username:user?.username
+  username:user?.username,
+  status:user?.status
 })
   useEffect(() => {
     if (!user?.username) return;
@@ -42,16 +43,29 @@ const[form , setForm] = useState({
 
   const sendMessage = () => {
   const newMsg = {
-    sender: user?.username,
-    text: msg,
-    reciever: person
+    sender:user?.username,
+    text:msg,
+    reciever:person
   };
 
   socket.emit("chat-message", newMsg);
 
-  setMessages((prev) => [...prev, newMsg]); 
+  // setMessages((prev) => [...prev, newMsg]); // this is creating problem rendering two messages
   setMsg("");
 };
+
+//   const sendMessage = () => {
+//     console.log(user)
+//     socket.emit("chat-message",
+//       {
+//         sender: user?.username,
+//         text: msg,
+//         reciever: person
+//       })
+//   // setMessages((prev) => [...prev, newMsg]); 
+// // 
+//     setMsg("")  // we take from the frontend user or client 
+//   }
 
   const fetchMessages = async () => {
     try {
@@ -75,7 +89,7 @@ const[form , setForm] = useState({
       setMessages((prev) => [...prev, incomingMsg]);
     });
 
-    socket.on("typing", ({ sender, reciever }) => { // we fisrt send the emit through socket emit and then get with on in baceknd an then cacth with on in frontned 
+    socket.on("typing", ({ sender , reciever }) => { // we fisrt send the emit through socket emit and then get with on in baceknd an then cacth with on in frontned 
       if (reciever === user?.username) {
         setIsTyping(true)
       }
@@ -103,7 +117,6 @@ const[form , setForm] = useState({
     return () => {
       socket.off("online-users")
       socket.off("user-offline")
-
     }
   }, [])
 
@@ -120,12 +133,38 @@ const handleDelete = async()=>{
     })
     console.log(res)
     setPerson("")
+    toast.success("Profile Deleted")
     
   } catch (error) {
     console.log(error)
-  }
+  if(error.response?.message){
+    toast.error(error.response?.message)
+    }else{
+      toast.error("Something went wrong")
+    }  }
 }
-
+ const handleRead =async ()=>{
+try {
+  const res= await axios.put(`http://localhost:5000/api/read/${user?.username}/${person}`,{},
+    {
+      headers : {Authorization : `Bearer ${token}`}
+    }
+  )
+  setMessages((prevMessages)=> 
+  prevMessages.map((msg)=>(
+    msg.sender === person ?{...msg , read:true } : msg
+  ))
+)
+// console.log(res)
+} catch (error) {
+  console.log(error)
+}
+ }
+useEffect(() => {
+  if (person) {
+    handleRead();
+  }
+}, [person]);
   useEffect(() => {
 
     socket.on("last-seen-online", (lastSeen) => {
@@ -157,7 +196,6 @@ console.log(users)
     fetchAllUsers()
   }
     , [token , user])
-
 
   useEffect(() => {
     console.log(person)
@@ -191,6 +229,7 @@ console.log(users)
     localStorage.removeItem("person")
     setPerson(null)
     navigate("/")
+    toast.success("Logout Done")
     logout()
 
   }
@@ -243,20 +282,28 @@ const handleSubmit=async (e)=>{
   try {
     const res = await axios.put("http://localhost:5000/api/auth/update",{
       username:form.username,
-      email:form.email
-
+      email:form.email,
+      status:form.status
     },  {
         headers : { Authorization : `Bearer ${token}`}
       })
       console.log(res)
+      console.log(form)
       setUser(res.data.updatedUser)
         setShowModal(false);
-        setForm({
-          email:"",
-          username:""
-        })
+        // setForm({
+        //   email:"",
+        //   username:"",
+        //   status:""
+        // })
+        toast.success("User Details Updated SuccesFully")
   } catch (error) {
     console.log(error)
+    if(error.response?.message){
+    toast.error(error.response?.message)
+    }else{
+      toast.error("Something went wrong")
+    }
   }
 }
 const openEditModal = () => {
@@ -269,8 +316,6 @@ setPerson(e.target.value)
 fetchMessages();
   // fetchAllUsers()
 }
-
-
 const handleChat = async () => {
   const confirmDelete = window.confirm("Are you sure you want to delete this chat?");
   if (!confirmDelete) return;
@@ -307,8 +352,12 @@ const handleChat = async () => {
    />
    <Button onClick={handleSearch} variant="primary">Search</Button>
 
-  {search && searchedUser.length==0 ? <div>No users with this username</div> :   (searchedUser.map((user) => (
-  
+  {search && searchedUser.length==0 ? (<div>No users with this username</div> ): search && searchedUser.length>0 ? (
+
+    <div>
+     <div className="mb-2 font-semibold">Here are your users:</div>
+   {searchedUser.map((user) => (
+    
   <div
     key={user._id}
     onClick={() => handlePerson({ target: { value: user.username } })}
@@ -316,7 +365,10 @@ const handleChat = async () => {
   >
     {user.username}
   </div>
-)))}
+)
+)}</div>
+):null}
+
 
    {/* Come back here tomorrow and finish this  */}
 </div>
@@ -381,8 +433,9 @@ const handleChat = async () => {
                           : "bg-gray-200 text-gray-900 rounded-bl-none"
                           }`}
                       >
+                         
+                        {m.text}{m.read ?"✓✓":"✓"}
 
-                        {m.text}
 
                         <div className="text-xs mt-0.5 text-gray-600">
                           {isSender ? "You" : m.sender}
@@ -430,20 +483,24 @@ const handleChat = async () => {
                     <form onSubmit={handleSubmit} className="d-flex flex-column gap-3">
                         <input
                             type="text"
-                          
-                            className="form-control"
+                      className='p-2 border-2'
                             placeholder="UserName"
                             value={form.username}
                             onChange={(e)=>setForm((prev => ({...prev , username:e.target.value})))}
                         />
                         <input
-                            type="text"
-                     
-                            className="form-control"
+                            type="email"
+                            className='p-2 border-2'
                             placeholder="Email"
                             value={form.email}
                             onChange={(e)=>setForm((prev => ({...prev , email:e.target.value})))}
                         />
+                          <div>{user?.status} is your current Status</div>
+                        <select value={form.status} onChange={(e)=> setForm((prev)=>({...prev,status:e.target.value}))}>
+                          <option value="">Select Status</option>
+                          <option value="invisible">Invisible (No Info About Last Seen or Online)</option>
+                          <option value="online">Visible (Will Be Shown Online When You Are)</option>
+                        </select>
                       
       <Button variant="primary" type="submit">Done</Button>
                       

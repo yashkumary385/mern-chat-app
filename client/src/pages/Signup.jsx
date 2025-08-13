@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Lock ,Mail } from "lucide-react";
 import axios from "axios"
 import Button from 'react-bootstrap/Button';
-
+import { toast } from 'react-toastify';
 
 export const Signup = () => {
   const navigate = useNavigate();
@@ -26,9 +26,11 @@ export const Signup = () => {
         email:form.email
       })
       console.log(res)
+      toast.success("Signup SuccessFull")
       navigate("/")
     } catch (error) {
       console.log(error)
+      toast.error(error.response?.data.message)
     }
    }
  return (

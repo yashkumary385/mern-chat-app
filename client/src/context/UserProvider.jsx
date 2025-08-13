@@ -1,6 +1,7 @@
 // src/context/UserContext.jsx
 import {  useEffect, useState } from "react";
 import axios from "axios";
+import { toast } from 'react-toastify';
 
 import UserContext from "./UserContext";
 // export const useUser = () => useContext(UserContext);
@@ -18,13 +19,25 @@ export const UserProvider = ({ children }) => {
       setToken(token);
       setUser(user);
       console.log(user);
+      toast.success("Login Sucessfull")
       return {success : true}
     } catch (error) {
       console.log(error);
+      if (error.response?.data.message) {
+          toast.error(error.response.data.message);
+        } else {
+          toast.error(error.response?.data);
+        }
+         return {
+                success: false,
+                error: error.res?.data?.message || "Login failed",
+            };
     }
   };
 
   const logout = () => {
+    const confirm = window.confirm("Are You Sure You Want To Logout ?")
+    if(!confirm) return;
     localStorage.removeItem("token");
     setUser(null);
     setToken(null);
