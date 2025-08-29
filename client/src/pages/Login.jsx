@@ -4,14 +4,33 @@ import { Lock ,Mail } from "lucide-react";
 import { useUser } from '../hooks/useUser';
 import Button from 'react-bootstrap/Button';
 import { Link } from 'react-router-dom';
+import Modal from 'react-bootstrap/Modal';
+import axios from 'axios';
 
+import { toast} from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 export const Login = () => {
   const navigate = useNavigate();
     const {login} = useUser();
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showModal, setShowModal] = useState(false);
+
   const handleLogin =async (e)=>{
     e.preventDefault();
+    if (!email || !password) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+    //   if (password.length < 8) {    
+    //   toast.error("Password must be at least 8 characters long");
+    //   return;
+    // }
+    if(!email.includes("@")){
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
     try {
       const result =  await login(email ,password)
       console.log(result)
@@ -22,7 +41,40 @@ export const Login = () => {
         console.log(error)
     }
   }
+   const [passwordForm, setPasswordForm] = useState({
+    email: "",
+    password: "",
+    password1: ""
+  })
+    const handleModal = () => {
+    setShowModal(true)
+  }
+  
+  const handleCloseModal = () => {
+    setShowModal(false);
+  };
+
+   const handlePasswordForm =async (e) => {
+    e.preventDefault()
+    try {
+         const res = await axios.post("http://localhost:5000/api/auth/changePassword",{
+      email: passwordForm.email,
+      password: passwordForm.password,
+      password1: passwordForm.password1
+    })
+         console.log(res)
+         setShowModal(false)
+         toast.success(res.data.message)
+         setPasswordForm({ email: "",
+    password: "",
+    password1: ""})
+    } catch (error) {
+     console.log(error)
+     toast.error(error.data)
+    }
+  }
  return (
+  <>
     <div
       className="flex justify-center items-center min-h-[100vh] bg-black  
 
@@ -76,9 +128,46 @@ export const Login = () => {
             Login
           </Button>
         </form>
-      <Link to="/signup">SignUp</Link>
+          <div className="mt-4 text-center">
+          Forgot Passord ? <Link onClick={handleModal} variant="success" className="text-blue-500 font-bold">Reset Password</Link>
+        </div>
+       <div className="mt-4 text-center">
+                 Don't have an account? <Link to="/signup" className="text-blue-500 font-bold">Sign Up</Link>
+               </div>
       </div>
     </div>
+      <Modal show={showModal} onHide={handleCloseModal} centered className="p-2">
+        <Modal.Header closeButton>
+          <Modal.Title>Reset Password Password</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <form onSubmit={handlePasswordForm} className="flex flex-col gap-3 p-2">
+            <input type="email"
+              placeholder="Enter Your Email"
+              value={passwordForm.email}
+              onChange={(e) => setPasswordForm((prev) => ({ ...prev, email: e.target.value }))}
+              className="border-2 border-gray-300 p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+            <input type="password"
+              placeholder="Enter New Password"
+              onChange={(e) => setPasswordForm((prev) => ({ ...prev, password: e.target.value }))}
+              value={passwordForm.password}
+              className="border-2 border-gray-300 p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+            /> <input type="password"
+              placeholder="Confirm Password"
+              onChange={(e) => setPasswordForm((prev) => ({ ...prev, password1: e.target.value }))}
+              value={passwordForm.password1}
+              className="border-2 border-gray-300 p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+            <div className="flex justify-end gap-2 mt-3">
+              <Button variant="secondary" onClick={handleCloseModal}>Cancel</Button>
+              <Button variant="primary" type="submit">Update</Button>
+            </div>
+          </form>
+        </Modal.Body>
+      </Modal>
+
+    </>
   );
 }
   

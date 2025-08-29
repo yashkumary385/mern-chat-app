@@ -2,6 +2,7 @@
 import {  useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from 'react-toastify';
+import { loginApi, meApi } from "../api/api.js";
 
 import UserContext from "./UserContext";
 // export const useUser = () => useContext(UserContext);
@@ -9,16 +10,18 @@ import UserContext from "./UserContext";
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(() => localStorage.getItem("token") || null);
-
+   const [loading, setLoading] = useState(true);
   const login = async (email, password) => {
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", { email, password });
+      const res = await loginApi(email, password);
       const { token, user } = res.data;
       console.log(res);
       localStorage.setItem("token", token);
       setToken(token);
       setUser(user);
       console.log(user);
+        // setLoading(false);
+
       toast.success("Login Sucessfull")
       return {success : true}
     } catch (error) {
@@ -32,16 +35,16 @@ export const UserProvider = ({ children }) => {
                 success: false,
                 error: error.res?.data?.message || "Login failed",
             };
+    }finally{
+        setLoading(false);
     }
   };
 
   const logout = () => {
-    const confirm = window.confirm("Are You Sure You Want To Logout ?")
-    if(!confirm) return;
+   
     localStorage.removeItem("token");
     setUser(null);
     setToken(null);
-    
   };
 
   useEffect(() => {
@@ -50,16 +53,16 @@ export const UserProvider = ({ children }) => {
         setUser(null);
         return;
       }
-
+     
       try {
-        const res = await axios.get("http://localhost:5000/api/auth/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+        const res = await meApi()
         setUser(res.data);
+        // setLoading(false);
       } catch (error) {
         console.log(error);
-        logout();
+        // logout();
+      }finally{
+        setLoading(false);
       }
     };
 
@@ -67,7 +70,7 @@ export const UserProvider = ({ children }) => {
   }, [token]);
 
   return (
-    <UserContext.Provider value={{ user, token, login, logout ,setUser}}>
+    <UserContext.Provider value={{ user, token, login, logout ,setUser,loading}}>
       {children}
     </UserContext.Provider>
   );

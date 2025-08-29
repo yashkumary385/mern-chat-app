@@ -2,7 +2,8 @@
 import { createBrowserRouter, createRoutesFromElements, Route } from "react-router-dom";
 import Login from './pages/Login';
 import Chat from "./pages/Chat";
-import Signup from "./pages/signup";
+import Signup from "./pages/Signup";
+import PrivateRoutes from "../utils/PrivateRoutes";
 
 
 export const router = createBrowserRouter(
@@ -10,7 +11,13 @@ export const router = createBrowserRouter(
     <>
     <Route path="/" element={<Login/>}/>
     <Route path="/signup" element={<Signup/>}/>
-    <Route path="/chat" element={<Chat/>}/>
+    <Route path="/chat" element={
+   <PrivateRoutes>
+      <Chat/>
+    </PrivateRoutes>
+      
+      }/>
+      
     </>
   )
 )

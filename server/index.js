@@ -64,6 +64,8 @@ io.on('connection', async (socket) => {
         console.log(msg)
         await Message.create(msg)
         const recieverSocketId = allUsers[msg.reciever]
+        console.log(recieverSocketId, "this is socekt id reciver")
+
         if (recieverSocketId) {
             console.log(`this is the ${recieverSocketId}`)
             io.to(recieverSocketId).emit('chat-message', msg); // msg from the frontned passed on to the users 
@@ -75,15 +77,19 @@ io.on('connection', async (socket) => {
         // io.emit("chat-message",msg) 
     });
     socket.on("typing", ({ sender, reciever }) => { // only to the reciever  
+
         const recieverSocketId = allUsers[reciever]
+        console.log(recieverSocketId, "this is socekt id reciver")
+
         if (recieverSocketId) {
             io.to(recieverSocketId).emit("typing", { sender, reciever });
         }
     })
-    socket.on("Not typing", ({ sender, reciever }) => {
+    socket.on("not-typing", ({ sender, reciever }) => {
+        console.log("hii")
         const recieverSocketId = allUsers[reciever]
         if (recieverSocketId) {
-            io.to(recieverSocketId).emit("Not typing", { sender, reciever });
+            io.to(recieverSocketId).emit("not-typing", { sender, reciever });
         }
     })
     console.log("this is the last seen", lastSeen)
@@ -134,7 +140,7 @@ app.use("/api/messages/:user1/:user2", async (req, res) => { // controller and r
 
 
 )
-
+// look at this 
 app.use("/api/status", verifyToken,async(req,res)=>{
     const userId = req.user.id;
     const {status} = req.body;
@@ -165,18 +171,20 @@ try {
 }
 })
 
-app.use("/api/deleteChat/:user1/:user2", verifyToken,async(req,res)=>{
-    const {user1 ,user2 } = req.params;
+app.use("/api/deleteChat/:user1/:user2", verifyToken, async (req, res) => {
+    const { user1, user2 } = req.params;
     try {
-        const messages = await Message.deleteMany({
-        $or:[{sender:user1 , reciever:user2} , {sender:user2 , reciever:user1}]
-    })
-    res.status(200).json({message:"Deleted Succesfully"})
+        // Delete messages where user1 and user2 are sender/receiver pairs
+        const result = await Message.deleteMany({
+            $or: [
+                { sender: user1, reciever: user2 },
+                { sender: user2, reciever: user1 }
+            ]
+        });
+        res.status(200).json({ message: "Deleted Successfully", deletedCount: result.deletedCount });
     } catch (error) {
-    res.status(404).json({message: error})
-        
+        res.status(404).json({ message: error });
     }
-    
 })
 
 
@@ -188,6 +196,35 @@ mongoose.connect("mongodb+srv://admin:admin123@cluster0.mypt7no.mongodb.net/?ret
         console.log(err)
 
     })
+    app.delete("/api/message/:id", verifyToken, async (req, res) => {
+        // console.log("delete route hitt")
+    const { id } = req.params;
+    try {
+        const result = await Message.findByIdAndDelete(id);
+        if (!result) {
+            return res.status(404).json({ message: "Message not found" });
+        }
+        res.status(200).json({ message: "Message deleted successfully" });
+    } catch (error) {
+        res.status(404).json({ message: error });
+    }
+});
+    app.put("/api/message/:id", verifyToken, async (req, res) => {
+        // console.log("delete route hitt")
+    const { id } = req.params;
+    const {text} = req.body;
+    try {
+        const result = await Message.findByIdAndUpdate(id,{
+            text:text
+        });
+        if (!result) {
+            return res.status(404).json({ message: "Message not found" });
+        }
+        res.status(200).json({ message: "Message updated successfully" });
+    } catch (error) {
+        res.status(404).json({ message: error });
+    }
+});
 
 server.listen(5000, () => {
     console.log("5000 is the port")

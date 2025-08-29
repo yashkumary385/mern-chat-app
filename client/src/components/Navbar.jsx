@@ -12,7 +12,7 @@ const ChatNavbar = ({onEditClick , onDeleteClick , onLogout}) => {
     <Navbar.Brand href="#home">Simple Chat App</Navbar.Brand>
     </Nav>
     <Nav className="ms-auto flex gap-2">
-      <strong href="#home" className='text-white mt-1 mr-2'>Hello {user?.username}</strong>
+      <strong href="#home" className='text-white mt-1 mr-2'>Hello {user?.name}</strong>
       <Button className="btn btn-primary" onClick={onLogout}>Logout</Button>
           <Button 
         onClick={onEditClick} 
