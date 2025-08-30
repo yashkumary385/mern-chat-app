@@ -65,5 +65,8 @@ export const updateMessageApi = async (messageId, data) => {
   console.log(messageId, data); 
   return api.put(`/messages/${messageId}`, data);
 }
-
+export const saveMessageApi = async (data) => {
+  console.log(data); 
+  return api.post(`/messages`, data);
+}
 export default api;

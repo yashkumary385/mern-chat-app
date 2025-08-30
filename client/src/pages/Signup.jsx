@@ -50,25 +50,25 @@ const validatePassword = (password) => {
    const handleSignup =async (e)=>{
     e.preventDefault();
 
-    //  if(form.username.length < 3) {
-    //         toast.warning("Username must be at least 3 characters long!");
-    //         return;
-    //     }
-    //     if(form.name1.length < 3) {
-    //         toast.warning("Name must be at least 3 characters long!");
-    //         return;
-    //     }
+     if(form.username.length < 3) {
+            toast.warning("Username must be at least 3 characters long!");
+            return;
+        }
+        if(form.name1.length < 3) {
+            toast.warning("Name must be at least 3 characters long!");
+            return;
+        }
 
     
-    //     if (!validateEmail(form.email)) {
-    //         toast.warning("Please enter a valid email address!");
-    //         return;
-    //     }
+        if (!validateEmail(form.email)) {
+            toast.warning("Please enter a valid email address!");
+            return;
+        }
 
-    //     if (!validatePassword(form.password)) {
-    //         toast.warning("Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.");
-    //         return;
-    //     }
+        if (!validatePassword(form.password)) {
+            toast.warning("Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.");
+            return;
+        }
     try {
       
     const res = await signupApi(form.username , form.password , form.email , form.name1)  

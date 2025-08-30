@@ -1,5 +1,4 @@
 import { io } from 'socket.io-client'
-import axios from "axios";
 import { useEffect, useState } from 'react'
 import { useUser } from '../hooks/useUser';
 import ListGroup from 'react-bootstrap/ListGroup';
@@ -10,8 +9,8 @@ import { toast } from 'react-toastify';
 import { useRef } from 'react';
 import ChatNavbar from '../components/Navbar';
 import { useNavigate } from 'react-router-dom';
-import { fetchMessagesApi, deleteAccountApi, fetchAllUsersApi, searchUsersApi, updateProfileApi, deleteChatApi, updateMessageApi } from '../api/api';
-const socket = io("http://localhost:5000") // this tells us about our backend from where the request comes
+import { fetchMessagesApi, deleteAccountApi, fetchAllUsersApi, searchUsersApi, updateProfileApi, deleteChatApi, updateMessageApi ,saveMessageApi,deleteMessageApi} from '../api/api';
+const socket = io(import.meta.env.VITE_SOCKET_URL) // this tells us about our backend from where the request comes
 
 const Chat = () => {
   const { user, token, logout, setUser } = useUser();
@@ -24,12 +23,12 @@ const Chat = () => {
   const [person, setPerson] = useState(() => localStorage.getItem("person") || null)
   const [isOnlineUsers, SetIsOnlineUsers] = useState([])
   const [lastSeenMap, setLastSeenMap] = useState({})
-  const [status, setStatus] = useState("invisible");
   const [username, setusername] = useState("")
   const [searchedUser, setSearchedUser] = useState([])
   const navigate = useNavigate()
   const [editingMsgId, setEditingMsgId] = useState(null);
   const [editText, setEditText] = useState("");
+  const [search, setSearch] = useState(false);
   const [form, setForm] = useState({
     email: "",
     name: "",
@@ -48,17 +47,30 @@ const Chat = () => {
       status: user?.status || ""
     })
   }, [user])
-  const sendMessage = () => {
+  const sendMessage = async() => {
     const newMsg = {
       sender: user?.username,
       text: msg,
       reciever: person
     };
 
-    socket.emit("chat-message", newMsg);
 
-    setMessages((prev) => [...prev, newMsg]); // this is creating problem rendering two messages
+  try {
+    // Save to backend first so it gets id nad then add it to the set messages so it is in set messages and then u can fetch the id 
+    // const res = await axios.post("http://localhost:5000/api/messages", newMsg, {
+    //   headers: { Authorization: `Bearer ${token}` }
+    // });
+    const res = await saveMessageApi(newMsg);
+    const savedMsg = res.data.message; // Make sure your backend returns the saved message with _id
+
+    socket.emit("chat-message", savedMsg); // Emit the saved message with _id
+    setMessages((prev) => [...prev, savedMsg]); // Add to state with _id
     setMsg("");
+  } catch (error) {
+    toast.error( error.data?.message ||"Failed to send message");
+  }
+    // setMessages((prev) => [...prev, newMsg]); // this is creating problem rendering two messages
+    
   };
 
   //   const sendMessage = () => {
@@ -89,21 +101,23 @@ const Chat = () => {
       setMessages([])
       fetchMessages();
     }
-  }, [person, user])  // only when depedndecy changes and doesnt run on every render 
+  }, [person, user]) // either one changes runs the effect
+   // only when depedndecy changes and doesnt run on every render 
   // because user might not be available so it waits for the user to be available and then  caals function
   // pu useeffct
   useEffect(() => { // a msg coming from the server and event chat-message 
     socket.on('chat-message', (incomingMsg) => {
+      console.log(incomingMsg)
       // setMessages((prev) => [...prev, incomingMsg]);
     },[]);
 
-    socket.on("typing", ({ sender, reciever }) => { // we fisrt send the emit through socket emit and then get with on in baceknd an then cacth with on in frontned 
+    socket.on("typing", ({reciever }) => { // we fisrt send the emit through socket emit and then get with on in baceknd an then cacth with on in frontned 
       console.log("typing hitt")
       if (reciever === user?.username) {
         setIsTyping(true)
       }
     })
-    socket.on("not-typing", ({ sender, reciever }) => {
+    socket.on("not-typing", ({  reciever }) => {
       if (reciever === user?.username) {
         setIsTyping(false)
       }
@@ -124,7 +138,8 @@ const Chat = () => {
     socket.on("user-offline", (username) => { // remove the user from the isonline array
       SetIsOnlineUsers((prev) => prev.filter((u) => u !== username))
     })
-
+    console.log(messages)
+  
     return () => {
       socket.off("online-users")
       socket.off("user-offline")
@@ -368,12 +383,13 @@ const Chat = () => {
     const confirm = window.confirm("Delete this message?");
     if (!confirm) return;
     try {
-      await axios.delete(`http://localhost:5000/api/messages/${msgId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // await axios.delete(`http://localhost:5000/api/messages/${msgId}`, {
+      //   headers: { Authorization: `Bearer ${token}` }
+      // });
+       await deleteMessageApi(msgId, "This message was deleted");
       setMessages((prev) => prev.filter((m) => m._id !== msgId));
     } catch (error) {
-      toast.error("Failed to delete message");
+      toast.error( error.data?.message||"Failed to delete message");
     }
   };
 
@@ -386,12 +402,13 @@ const Chat = () => {
 
   const handleEditSubmit = async (msgId) => {
     try {
-      const res = await axios.put(
-        `http://localhost:5000/api/messages/${msgId}`,
-        { text: editText },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      // const res=await updateMessageApi(msgId, {text :editText});
+      // const res = await axios.put(
+      //   `http://localhost:5000/api/messages/${msgId}`,
+      //   { text: editText },
+      //   { headers: { Authorization: `Bearer ${token}` } }
+      // );
+
+      const res=await updateMessageApi(msgId, {text :editText});
       console.log(res)
       setMessages((prev) =>
         prev.map((m) => (m._id === msgId ? { ...m, text: editText } : m))
@@ -399,7 +416,7 @@ const Chat = () => {
       setEditingMsgId(null);
       setEditText("");
     } catch (error) {
-      toast.error("Failed to update message" );
+      toast.error(error.data?.message ||"Failed to update message" );
     }
   };
   return (

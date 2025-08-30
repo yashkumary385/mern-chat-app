@@ -6,9 +6,15 @@ import mongoose from "mongoose";
 import Message from "./models/Message.js";
 import { verifyToken } from "./middleware/authMiddleware.js";
 import User from "./models/User.js";
+import dotenv from "dotenv"
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config({ path: ".env.development" });
+}
 const onlineUsers = {} // this gets completely reset on refresh frontend repopulates and runs regiter to fill the array 
 const lastSeen = {}
 const allUsers ={} // for all users that register no matter they are shown offline or online . beacuse of their mode .
@@ -20,10 +26,15 @@ const allUsers ={} // for all users that register no matter they are shown offli
 const server = http.createServer(app);
 const io = new Server(server, { // // we make an server and this is ws server for the frontnd 
     cors: {
-        origin: "http://localhost:5173", /// tells from where to accept the request from 
-        methods: ["GET", "POST"]
+        origin:process.env.CORS_ORIGIN, /// tells from where to accept the request from 
+   
     }
 })
+
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
 import authRoutes from "./routes/auth.routes.js"
 app.use("/api/auth", authRoutes);
 
@@ -62,8 +73,8 @@ io.on('connection', async (socket) => {
     // chat messsage sendde only yo rciver with his socekt id better fro efficiency  and also to the user
     socket.on('chat-message', async (msg) => { // chat mee  event should be same from both the ends==
         console.log(msg)
-      const res=  await Message.create(msg)
-      console.log(res)
+    //   const res=  await Message.create(msg)
+    //   console.log(res)
         const recieverSocketId = allUsers[msg.reciever]
         console.log(recieverSocketId, "this is socekt id reciver")
 
@@ -187,9 +198,9 @@ app.use("/api/deleteChat/:user1/:user2", verifyToken, async (req, res) => {
         res.status(404).json({ message: error });
     }
 })
+const DB_URI = process.env.MONGO_DB_URI;
 
-
-mongoose.connect("mongodb+srv://admin:admin123@cluster0.mypt7no.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+mongoose.connect(DB_URI)
     .then(() => {
         console.log("Connected to mongo")
     })
@@ -229,8 +240,22 @@ mongoose.connect("mongodb+srv://admin:admin123@cluster0.mypt7no.mongodb.net/?ret
     }
 });
 
-server.listen(5000, () => {
-    console.log("5000 is the port")
+app.use("/api/messages", verifyToken,async(req, res) => {
+  try {
+    const { sender, text, reciever } = req.body;
+    const message = new Message({ sender, text, reciever });
+    const savedMessage = await message.save();
+    res.status(201).json({ message: savedMessage });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to save message' });
+  }
+});
+
+
+const PORT = process.env.PORT || 5001;
+
+server.listen(PORT, () => {
+    console.log(`${PORT} is the port`)
 })
 
 

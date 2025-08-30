@@ -17,8 +17,10 @@ export const router = createBrowserRouter(
     </PrivateRoutes>
       
       }/>
+         <Route path="*" element={<Login/>}/>
       
     </>
+    
   )
 )
  // chats between two users has been renderd now make ui beeter and userschme ans securities and revise this .
