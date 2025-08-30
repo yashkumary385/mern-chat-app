@@ -1,7 +1,7 @@
 import Router from "express"
 import User from "../models/User.js";
 import jwt from "jsonwebtoken"
-import bcrypt, { getRounds } from "bcrypt";
+import bcrypt from "bcrypt";
 import dotenv from "dotenv"
 import { verifyToken } from "../middleware/authMiddleware.js";
 import Message from "../models/Message.js";
@@ -130,7 +130,6 @@ router.get("/allChatUsers" ,verifyToken, async(req,res)=>{
     }
 })
 router.get("/allUsers" ,verifyToken, async(req,res)=>{
-    const userId = req.user.id;
     try {
         const user = await User.find({}).select("-password");
       
@@ -143,6 +142,7 @@ router.get("/allUsers" ,verifyToken, async(req,res)=>{
 
 router.put("/update",verifyToken , async(req,res)=>{
     const userId = req.user.id;
+    console.log(req.body," this is body")
     try {
          const updateFields = {
         name:req.body.name,

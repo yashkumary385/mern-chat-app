@@ -1,7 +1,6 @@
 import React, { useState ,  } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { Lock ,Mail ,User, User2} from "lucide-react";
-import axios from "axios"
 import Button from 'react-bootstrap/Button';
 import { toast } from 'react-toastify';
 import { Link } from 'react-router-dom';

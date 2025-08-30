@@ -39,7 +39,7 @@ export const deleteAccountApi = async () => {
 }
 // fetch all users except current user
 export const fetchAllUsersApi = async () => {
-  return api.get("/auth/allusers");
+  return api.get("/auth/allChatusers");
 }
 // search users
 export const searchUsersApi = async (username) => {
@@ -47,8 +47,23 @@ export const searchUsersApi = async (username) => {
 }
 // update profile
 export const updateProfileApi = async (formData) => {
+  console.log(formData)
   return api.put("/auth/update", formData);
 }
-
+// delete chat
+export const deleteChatApi = async (from, to) => {
+  console.log(from,to)  
+  return api.delete(`/deleteChat/${from}/${to}`);
+}
+// delete message
+export const deleteMessageApi = async (messageId,text) => {
+  return api.delete(`/messages/${messageId}`,{
+  text:text
+  });
+}
+export const updateMessageApi = async (messageId, data) => {
+  console.log(messageId, data); 
+  return api.put(`/messages/${messageId}`, data);
+}
 
 export default api;

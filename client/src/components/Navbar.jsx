@@ -1,9 +1,8 @@
-import React from 'react';
-import { Navbar, Container, Nav, NavDropdown, Button } from 'react-bootstrap';
+import { Navbar, Container, Nav, Button } from 'react-bootstrap';
 import { useUser } from '../hooks/useUser';
 
 const ChatNavbar = ({onEditClick , onDeleteClick , onLogout}) => {
-  const {logout , user} = useUser()
+  const { user} = useUser()
   return (
     <Navbar bg="dark" data-bs-theme="dark" expand="lg" >
   <Container>

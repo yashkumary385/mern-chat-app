@@ -62,7 +62,8 @@ io.on('connection', async (socket) => {
     // chat messsage sendde only yo rciver with his socekt id better fro efficiency  and also to the user
     socket.on('chat-message', async (msg) => { // chat mee  event should be same from both the ends==
         console.log(msg)
-        await Message.create(msg)
+      const res=  await Message.create(msg)
+      console.log(res)
         const recieverSocketId = allUsers[msg.reciever]
         console.log(recieverSocketId, "this is socekt id reciver")
 
@@ -196,7 +197,7 @@ mongoose.connect("mongodb+srv://admin:admin123@cluster0.mypt7no.mongodb.net/?ret
         console.log(err)
 
     })
-    app.delete("/api/message/:id", verifyToken, async (req, res) => {
+    app.delete("/api/messages/:id", verifyToken, async (req, res) => {
         // console.log("delete route hitt")
     const { id } = req.params;
     try {
@@ -209,10 +210,12 @@ mongoose.connect("mongodb+srv://admin:admin123@cluster0.mypt7no.mongodb.net/?ret
         res.status(404).json({ message: error });
     }
 });
-    app.put("/api/message/:id", verifyToken, async (req, res) => {
+    app.put("/api/messages/:id", verifyToken, async (req, res) => {
         // console.log("delete route hitt")
     const { id } = req.params;
     const {text} = req.body;
+        console.log(id,text)
+
     try {
         const result = await Message.findByIdAndUpdate(id,{
             text:text
@@ -220,7 +223,7 @@ mongoose.connect("mongodb+srv://admin:admin123@cluster0.mypt7no.mongodb.net/?ret
         if (!result) {
             return res.status(404).json({ message: "Message not found" });
         }
-        res.status(200).json({ message: "Message updated successfully" });
+        res.status(200).json({ message: "Message updated successfully" ,result});
     } catch (error) {
         res.status(404).json({ message: error });
     }

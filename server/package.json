@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+      "lint": "eslint . --ext .js,.mjs,.cjs"
   },
   "keywords": [],
   "author": "",
@@ -22,5 +23,10 @@
     "nodemon": "^3.1.10",
     "react-toastify": "^11.0.5",
     "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.34.0",
+    "eslint": "^9.34.0",
+    "globals": "^16.3.0"
   }
 }

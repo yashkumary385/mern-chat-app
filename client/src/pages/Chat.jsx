@@ -1,4 +1,3 @@
-import React, { use } from 'react'
 import { io } from 'socket.io-client'
 import axios from "axios";
 import { useEffect, useState } from 'react'
@@ -11,7 +10,7 @@ import { toast } from 'react-toastify';
 import { useRef } from 'react';
 import ChatNavbar from '../components/Navbar';
 import { useNavigate } from 'react-router-dom';
-import { fetchMessagesApi,deleteAccountApi,fetchAllUsersApi } from '../api/api';
+import { fetchMessagesApi, deleteAccountApi, fetchAllUsersApi, searchUsersApi, updateProfileApi, deleteChatApi, updateMessageApi } from '../api/api';
 const socket = io("http://localhost:5000") // this tells us about our backend from where the request comes
 
 const Chat = () => {
@@ -27,16 +26,14 @@ const Chat = () => {
   const [lastSeenMap, setLastSeenMap] = useState({})
   const [status, setStatus] = useState("invisible");
   const [username, setusername] = useState("")
-  const [search, setSearch] = useState(false)
   const [searchedUser, setSearchedUser] = useState([])
-  const [showButton, setShowButton] = useState(false)
   const navigate = useNavigate()
   const [editingMsgId, setEditingMsgId] = useState(null);
   const [editText, setEditText] = useState("");
   const [form, setForm] = useState({
-    email: user?.email || "",
-    name: user?.name,
-    status: user?.status
+    email: "",
+    name: "",
+    status: ""
   })
   useEffect(() => {
     if (!user?.username) return;
@@ -44,13 +41,13 @@ const Chat = () => {
     socket.emit("register", user?.username, user?.status) // emits an event register whne the user gets loaded in to the memory 
   }, [user]) // context didnt load if depdndecy emptty hence no user then nothing send hence crash occurs 
 
-  useEffect(() => {  
+  useEffect(() => {
     setForm({
       email: user?.email || "",
-      name: user?.name,
-      status: user?.status
+      name: user?.name || "",
+      status: user?.status || ""
     })
-  },[user])
+  }, [user])
   const sendMessage = () => {
     const newMsg = {
       sender: user?.username,
@@ -60,7 +57,7 @@ const Chat = () => {
 
     socket.emit("chat-message", newMsg);
 
-    // setMessages((prev) => [...prev, newMsg]); // this is creating problem rendering two messages
+    setMessages((prev) => [...prev, newMsg]); // this is creating problem rendering two messages
     setMsg("");
   };
 
@@ -80,7 +77,7 @@ const Chat = () => {
   const fetchMessages = async () => {
     try {
       // const res = await axios(`http://localhost:5000/api/messages/${user?.username}/${person}`);
-      const res = await fetchMessagesApi(user?.username,person);
+      const res = await fetchMessagesApi(user?.username, person);
       console.log(res)
       setMessages(res.data)
     } catch (error) {
@@ -97,8 +94,8 @@ const Chat = () => {
   // pu useeffct
   useEffect(() => { // a msg coming from the server and event chat-message 
     socket.on('chat-message', (incomingMsg) => {
-      setMessages((prev) => [...prev, incomingMsg]);
-    });
+      // setMessages((prev) => [...prev, incomingMsg]);
+    },[]);
 
     socket.on("typing", ({ sender, reciever }) => { // we fisrt send the emit through socket emit and then get with on in baceknd an then cacth with on in frontned 
       console.log("typing hitt")
@@ -284,11 +281,12 @@ const Chat = () => {
 
   const handleSearch = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/auth/search/${username}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      )
+      // const res = await axios.get(`http://localhost:5000/api/auth/search/${username}`,
+      //   {
+      //     headers: { Authorization: `Bearer ${token}` }
+      //   }
+      // )
+      const res = await searchUsersApi(username);
       console.log(res)
       setSearchedUser(res.data.user)
 
@@ -296,20 +294,26 @@ const Chat = () => {
 
       console.log(searchedUser)
     } catch (error) {
-      toast.error(error.response?.data.message  )
+      toast.error(error.response?.data.message)
       console.log(error)
     }
   }
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.put("http://localhost:5000/api/auth/update", {
+      // const res = await axios.put("http://localhost:5000/api/auth/update", {
+      //   name: form.name,
+      //   email: form.email,
+      //   status: form.status
+      // }, {
+      //   headers: { Authorization: `Bearer ${token}` }
+      // })
+      const res = await updateProfileApi({
+
         name: form.name,
         email: form.email,
         status: form.status
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      });
       console.log(res)
       console.log(form)
       setUser(res.data.updatedUser)
@@ -342,14 +346,15 @@ const Chat = () => {
   const handleChat = async () => {
     const confirmDelete = window.confirm("Are you sure you want to delete this chat?");
     if (!confirmDelete) return;
-
     try {
-      await axios.delete(
-        `http://localhost:5000/api/deleteChat/${user.username}/${person}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+      // await axios.delete(
+      //   `http://localhost:5000/api/deleteChat/${user.username}/${person}`,
+      //   {
+      //     headers: { Authorization: `Bearer ${token}` }
+      //   }
+      // );
+      await deleteChatApi(user.username, person);
+      // After successful deletion, clear messages from UI
 
       setMessages([]); // Clear UI
       alert("Chat deleted successfully");
@@ -363,7 +368,7 @@ const Chat = () => {
     const confirm = window.confirm("Delete this message?");
     if (!confirm) return;
     try {
-      await axios.delete(`http://localhost:5000/api/message/${msgId}`, {
+      await axios.delete(`http://localhost:5000/api/messages/${msgId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessages((prev) => prev.filter((m) => m._id !== msgId));
@@ -373,27 +378,30 @@ const Chat = () => {
   };
 
   const handleEditMsg = (msgId, text) => {
+    console.log(msgId, text)
     setEditText(text)
     setEditingMsgId(msgId)
   }
 
 
-const handleEditSubmit = async (msgId) => {
-  try {
-    await axios.put(
-      `http://localhost:5000/api/message/${msgId}`,
-      { text: editText },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    setMessages((prev) =>
-      prev.map((m) => (m._id === msgId ? { ...m, text: editText } : m))
-    ); //edit the text then and there 
-    setEditingMsgId(null);
-    setEditText("");
-  } catch (error) {
-    toast.error("Failed to edit message");
-  }
-};
+  const handleEditSubmit = async (msgId) => {
+    try {
+      const res = await axios.put(
+        `http://localhost:5000/api/messages/${msgId}`,
+        { text: editText },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // const res=await updateMessageApi(msgId, {text :editText});
+      console.log(res)
+      setMessages((prev) =>
+        prev.map((m) => (m._id === msgId ? { ...m, text: editText } : m))
+      ); //edit the text then and there 
+      setEditingMsgId(null);
+      setEditText("");
+    } catch (error) {
+      toast.error("Failed to update message" );
+    }
+  };
   return (
     <>
       <ChatNavbar onEditClick={openEditModal} onDeleteClick={handleDelete} onLogout={handleLogout} />
@@ -491,62 +499,62 @@ const handleEditSubmit = async (msgId) => {
                           : "bg-gray-200 text-gray-900 rounded-bl-none"
                           }`}
                       >
-                       {editingMsgId === m._id ? (
-                      <div>
-                         <input
-              value={editText}
-              onChange={(e) => setEditText(e.target.value)}
-              className="border px-2 py-1 rounded text-black"
-            />
-                             <button
-              className="ml-2 text-xs text-white underline"
-              onClick={() => handleEditSubmit(m._id)}
-            >
-              Save
-            </button>
-            <button
-              className="ml-2 text-xs text-gray-600 underline"
-              onClick={() => setEditingMsgId(null)}
-            >
-              Cancel
-            </button>
-
-
-                      </div>
-
-
-
-
-                       ) :(
-
-<> 
-
-
-
-
-                        {m.text}
-                        <div className="text-xs mt-0.5 text-gray-600">
-                          {isSender ? "You" : m.sender}
-                        </div>
-                        {isSender && (
-                          <div className='flex flex-row gap-2'>
+                        {editingMsgId === m._id ? (
+                          <div>
+                            <input
+                              value={editText}
+                              onChange={(e) => setEditText(e.target.value)}
+                              className="border px-2 py-1 rounded text-black"
+                            />
                             <button
-                              className="text-xs text-blue-600 underline"
-                              onClick={() => handleEditMsg(m._id, m.text)}
+                              className="ml-2 text-xs text-white underline"
+                              onClick={() => handleEditSubmit(m._id)}
                             >
-                              Edit
+                              Save
                             </button>
                             <button
-                              className="text-xs text-red-600 underline"
-                              onClick={() => handleDeleteMsg(m._id)}
+                              className="ml-2 text-xs text-gray-600 underline"
+                              onClick={() => setEditingMsgId(null)}
                             >
-                              Delete
+                              Cancel
                             </button>
+
+
                           </div>
-                        )}
 
-                       </>
-                      )}
+
+
+
+                        ) : (
+
+                          <>
+
+
+
+
+                            {m.text}
+                            <div className="text-xs mt-0.5 text-gray-600">
+                              {isSender ? "You" : m.sender}
+                            </div>
+                            {isSender && (
+                              <div className='flex flex-row gap-2'>
+                                <button
+                                  className="text-xs text-blue-600 underline"
+                                  onClick={() => handleEditMsg(m._id, m.text)}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className="text-xs text-red-600 underline"
+                                  onClick={() => handleDeleteMsg(m._id)}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            )}
+
+                          </>
+                        )}
                       </div>
 
                     </div>

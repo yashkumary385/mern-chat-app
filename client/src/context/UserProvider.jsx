@@ -1,6 +1,5 @@
 // src/context/UserContext.jsx
 import {  useEffect, useState } from "react";
-import axios from "axios";
 import { toast } from 'react-toastify';
 import { loginApi, meApi } from "../api/api.js";
 
