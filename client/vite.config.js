@@ -11,4 +11,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+    server: {
+    historyApiFallback: true,  // ensures local dev routing works
+  },
 })
