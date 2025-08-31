@@ -26,8 +26,7 @@ const allUsers ={} // for all users that register no matter they are shown offli
 const server = http.createServer(app);
 const io = new Server(server, { // // we make an server and this is ws server for the frontnd 
     cors: {
-        origin:process.env.CORS_ORIGIN, /// tells from where to accept the request from 
-   
+        origin:process.env.CORS_ORIGIN /// tells from where to accept the request from 
     }
 })
 
@@ -247,7 +246,7 @@ app.use("/api/messages", verifyToken,async(req, res) => {
     const savedMessage = await message.save();
     res.status(201).json({ message: savedMessage });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to save message' });
+    res.status(500).json(error);
   }
 });
 

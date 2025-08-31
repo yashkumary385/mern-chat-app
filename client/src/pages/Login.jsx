@@ -81,7 +81,7 @@ export const Login = () => {
 "
     >
       <div className="w-[350px] p-6 rounded-lg shadow-md bg-[#F9FAFB] flex flex-col items-center gap-6" >
-        <div className="text-2xl font-bold">Login</div>
+        <div className="text-2xl font-bold ">Login</div>
 
         {/* Icon Centered */}
         <div className="flex justify-center items-center" >
@@ -123,7 +123,7 @@ export const Login = () => {
           <Button
           variant='primary'
             type="submit"
-            className="w-full py-2 border-2 border-green-600 text-green-600 rounded hover:bg-green-50 transition duration-150"
+            className="w-full py-2 border-2 text-white rounded hover:bg-blue-200 transition duration-150"
           >
             Login
           </Button>

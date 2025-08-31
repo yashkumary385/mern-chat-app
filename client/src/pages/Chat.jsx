@@ -1,4 +1,5 @@
 import { io } from 'socket.io-client'
+//// MAKE THIS RESOPNSIVE TOMORROW AND DEPLOY TOMORROW 
 import { useEffect, useState } from 'react'
 import { useUser } from '../hooks/useUser';
 import ListGroup from 'react-bootstrap/ListGroup';
@@ -64,7 +65,7 @@ const Chat = () => {
     const savedMsg = res.data.message; // Make sure your backend returns the saved message with _id
 
     socket.emit("chat-message", savedMsg); // Emit the saved message with _id
-    setMessages((prev) => [...prev, savedMsg]); // Add to state with _id
+    // setMessages((prev) => [...prev, savedMsg]); // Add to state with _id
     setMsg("");
   } catch (error) {
     toast.error( error.data?.message ||"Failed to send message");
@@ -108,7 +109,7 @@ const Chat = () => {
   useEffect(() => { // a msg coming from the server and event chat-message 
     socket.on('chat-message', (incomingMsg) => {
       console.log(incomingMsg)
-      // setMessages((prev) => [...prev, incomingMsg]);
+      setMessages((prev) => [...prev, incomingMsg]);
     },[]);
 
     socket.on("typing", ({reciever }) => { // we fisrt send the emit through socket emit and then get with on in baceknd an then cacth with on in frontned 
@@ -422,16 +423,18 @@ const Chat = () => {
   return (
     <>
       <ChatNavbar onEditClick={openEditModal} onDeleteClick={handleDelete} onLogout={handleLogout} />
-      <div className="min-h-screen bg-gray-100 p-4 flex h-screen">
+      <div className="min-h-screen bg-gray-100 p-4 flex flex-col md:flex-row h-screen">
         {/* Sidebar */}
-        <div className='flex flex-col gap-3'>
+        <div className="flex flex-col gap-3 w-full md:w-[20vw] mb-4 md:mb-0">
           <div className='flex gap-2 flex-col'>
+            <div className='text-xl font-semibold mb-2'>Search People</div>
             <input type="text"
               onChange={(e) => setusername(e.target.value)}
               placeholder='Search Username '
               className='border-1 hover:bg-blue-100 p-2 mr-2 rounded-2xl'
             />
             <Button onClick={handleSearch} variant="primary">Search</Button>
+          <div className='text-xl font-semibold mb-2'> Chats </div>
 
             {search && searchedUser.length == 0 ? (<div>No users with this username</div>) : search && searchedUser.length > 0 ? (
 
@@ -453,7 +456,7 @@ const Chat = () => {
 
             {/* Come back here tomorrow and finish this  */}
           </div>
-          <div className="bg-white border-r w-[20vw] overflow-y-auto">
+          <div className="bg-white border-r w-full md:w-[20vw] overflow-y-auto">
             <ListGroup variant="flush" className="h-full">
               {(users || [])
                 .filter((u) => u !== user?.username)
@@ -495,7 +498,7 @@ const Chat = () => {
           {person ? (
             <>
               <h2 className="text-xl font-semibold mb-2">Chat with {person}</h2>
-              <div className="flex-1 overflow-y-auto border p-2 mb-2">
+              <div className="flex-1 overflow-y-auto border p-2 mb-2 max-h-[50vh] md:max-h-[70vh]">
                 <div className='flex items-center justify-center opacity-50 mt-3'>
                   {messages.length === 0 && <div>No messages yet. Start the conversation! 💬</div>
                   }

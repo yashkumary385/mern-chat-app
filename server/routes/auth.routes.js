@@ -11,6 +11,8 @@ const JWT_SECRET = process.env.JWT_SECRET
 const router = Router();
 router.post("/login", async(req,res)=>{
     console.log("login route hitt")
+    console.log(req.body);
+    
     try {
     const {email , password} = req.body;
     if(!email || !password){
@@ -30,7 +32,7 @@ router.post("/login", async(req,res)=>{
     } , JWT_SECRET , {expiresIn :"7d"})
     res.status(200).json({message:"Login Succesfull" , user,token})
     } catch (error) {
-        res.status(404).json({message:error})
+        res.status(404).json({message:"error",error:error.message})
     }
 })
 
