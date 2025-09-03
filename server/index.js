@@ -197,16 +197,7 @@ app.use("/api/deleteChat/:user1/:user2", verifyToken, async (req, res) => {
         res.status(404).json({ message: error });
     }
 })
-const DB_URI = process.env.MONGO_DB_URI;
 
-mongoose.connect(DB_URI)
-    .then(() => {
-        console.log("Connected to mongo")
-    })
-    .catch((err) => {
-        console.log(err)
-
-    })
     app.delete("/api/messages/:id", verifyToken, async (req, res) => {
         // console.log("delete route hitt")
     const { id } = req.params;
@@ -250,7 +241,16 @@ app.use("/api/messages", verifyToken,async(req, res) => {
   }
 });
 
+const DB_URI = process.env.MONGO_DB_URI;
 
+mongoose.connect(DB_URI)
+    .then(() => {
+        console.log("Connected to mongo")
+    })
+    .catch((err) => {
+        console.log(err)
+
+    })
 const PORT = process.env.PORT || 5001;
 
 server.listen(PORT, () => {
